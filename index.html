@@ -53,7 +53,7 @@
   </div>
   <div class="toast" id="toast"></div>
 
-  <script src="config.js"></script>
+  <script src="config.js?v=10.2"></script>
   <script>
     let installPrompt = null;
     const cfg = window.POULTRY_RX_CONFIG || {};
@@ -63,8 +63,9 @@
     const shareBtn = document.getElementById('shareBtn');
     const toast = document.getElementById('toast');
 
-    const validUrl = /^https:\/\/script\.google\.com\/(?:(?:a\/macros\/[^\/]+\/s)|(?:macros\/s))\/.+\/exec(?:\?.*)?$/i.test(cfg.appUrl || '');
-    if(validUrl){ frame.src = cfg.appUrl; } else { setup.classList.add('show'); }
+    const appUrl = String(cfg.appUrl || '').trim();
+    const validUrl = /^https:\/\/script\.google\.com\/.+\/exec(?:\?.*)?$/i.test(appUrl);
+    if(validUrl){ frame.src = appUrl; } else { setup.classList.add('show'); }
 
     function showToast(msg){
       toast.textContent=msg; toast.classList.add('show');
