@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#253f36">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Poultry Rx">
+  <title>Poultry Rx</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <style>
+    :root{--green:#253f36;--green2:#375b4d;--red:#e2312f;--bg:#f4f6f8;--ink:#17202a}
+    *{box-sizing:border-box}
+    html,body{margin:0;width:100%;height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--ink);overflow:hidden}
+    .shell{height:100%;display:grid;grid-template-rows:auto 1fr}
+    .bar{min-height:58px;padding:8px max(12px,env(safe-area-inset-left)) 8px max(12px,env(safe-area-inset-right));background:var(--green);color:#fff;display:flex;align-items:center;gap:10px;box-shadow:0 2px 12px rgba(0,0,0,.14);z-index:3}
+    .bar img{width:42px;height:42px;border-radius:10px}
+    .title{min-width:0;flex:1}.title b{display:block;font-size:15px}.title span{display:block;font-size:10px;color:#d8e3df;margin-top:2px}
+    button{border:1px solid rgba(255,255,255,.35);background:#fff;color:var(--green);border-radius:9px;padding:9px 11px;font-size:11px;font-weight:800;cursor:pointer}
+    iframe{border:0;width:100%;height:100%;background:#fff}
+    .setup{position:absolute;inset:58px 0 0;background:#f4f6f8;display:none;align-items:center;justify-content:center;padding:22px;z-index:5}
+    .setup.show{display:flex}.panel{width:min(560px,100%);background:#fff;border:1px solid #e4e7ec;border-radius:16px;padding:20px;box-shadow:0 12px 32px rgba(16,24,40,.08)}
+    .panel h1{font-size:20px;margin:0 0 8px;color:var(--green)}.panel p,.panel li{font-size:13px;line-height:1.5;color:#475467}.panel code{font-size:11px;background:#f2f4f7;padding:3px 5px;border-radius:4px;word-break:break-all}
+    .toast{position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom));transform:translateX(-50%);background:#101828;color:#fff;border-radius:10px;padding:10px 13px;font-size:11px;z-index:9;display:none;max-width:90%;text-align:center}.toast.show{display:block}
+    @media (display-mode:standalone){.bar{min-height:50px}.bar .install{display:none}}
+    @media(max-width:560px){.bar{min-height:52px}.bar img{width:36px;height:36px}.title b{font-size:14px}.title span{display:none}.bar button{padding:8px 9px}}
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="bar">
+      <img src="icons/icon-192.png" alt="Poultry Rx">
+      <div class="title"><b>Poultry Rx</b><span>Animal Health Group</span></div>
+      <button class="install" id="installBtn" type="button">Install</button>
+      <button id="shareBtn" type="button">Share</button>
+    </div>
+    <iframe id="appFrame" title="Poultry Rx dosage calculator" allow="clipboard-write; downloads"></iframe>
+  </div>
+
+  <div class="setup" id="setup">
+    <div class="panel">
+      <h1>One setup value is still needed</h1>
+      <p>Open <b>config.js</b> and replace the placeholder with your deployed Google Apps Script Web App URL that ends in <code>/exec</code>.</p>
+      <ol>
+        <li>Apps Script → Deploy → Manage deployments → copy the Web App URL.</li>
+        <li>Paste it into <code>appUrl</code> in <b>config.js</b>.</li>
+        <li>Upload this folder to an HTTPS static host, then open that HTTPS URL on the phone.</li>
+      </ol>
+    </div>
+  </div>
+  <div class="toast" id="toast"></div>
+
+  <script src="config.js"></script>
+  <script>
+    let installPrompt = null;
+    const cfg = window.POULTRY_RX_CONFIG || {};
+    const frame = document.getElementById('appFrame');
+    const setup = document.getElementById('setup');
+    const installBtn = document.getElementById('installBtn');
+    const shareBtn = document.getElementById('shareBtn');
+    const toast = document.getElementById('toast');
+
+    const validUrl = /^https:\/\/script\.google\.com\/macros\/s\/.+\/exec(?:\?.*)?$/i.test(cfg.appUrl || '');
+    if(validUrl){ frame.src = cfg.appUrl; } else { setup.classList.add('show'); }
+
+    function showToast(msg){
+      toast.textContent=msg; toast.classList.add('show');
+      setTimeout(()=>toast.classList.remove('show'),4200);
+    }
+    function standalone(){return matchMedia('(display-mode: standalone)').matches || navigator.standalone===true}
+    function ios(){return /iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)}
+    window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;installBtn.textContent='Install app'});
+    window.addEventListener('appinstalled',()=>{installPrompt=null;installBtn.style.display='none';showToast('Poultry Rx installed.')});
+    if(standalone()) installBtn.style.display='none';
+
+    installBtn.addEventListener('click', async ()=>{
+      if(installPrompt){
+        const p=installPrompt; installPrompt=null; await p.prompt(); return;
+      }
+      if(ios()) showToast('Safari: tap Share → Add to Home Screen → Add.');
+      else showToast('Browser menu: choose Install app or Add to Home screen.');
+    });
+
+    shareBtn.addEventListener('click', async ()=>{
+      const data={title:'Poultry Rx',text:'Poultry Rx dosage calculator',url:location.href};
+      if(navigator.share){try{await navigator.share(data);return}catch(e){if(e.name==='AbortError')return}}
+      try{await navigator.clipboard.writeText(location.href);showToast('Poultry Rx link copied.')}
+      catch(e){showToast('Copy the URL from the browser address bar.')}
+    });
+
+    if('serviceWorker' in navigator){
+      window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+    }
+  </script>
+</body>
+</html>
