@@ -63,7 +63,7 @@
     const shareBtn = document.getElementById('shareBtn');
     const toast = document.getElementById('toast');
 
-    const validUrl = /^https:\/\/script\.google\.com\/macros\/s\/.+\/exec(?:\?.*)?$/i.test(cfg.appUrl || '');
+    const validUrl = /^https:\/\/script\.google\.com\/(?:(?:a\/macros\/[^\/]+\/s)|(?:macros\/s))\/.+\/exec(?:\?.*)?$/i.test(cfg.appUrl || '');
     if(validUrl){ frame.src = cfg.appUrl; } else { setup.classList.add('show'); }
 
     function showToast(msg){
